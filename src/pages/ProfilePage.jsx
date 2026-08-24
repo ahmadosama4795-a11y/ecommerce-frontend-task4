@@ -1,0 +1,17 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { useAuth } from "../context/AuthContext";
+import { orders as seedOrders } from "../data/orders";
+import Alert from "../components/common/Alert";
+import ConfirmDialog from "../components/common/ConfirmDialog";
+
+function ProfilePage() {
+  const { currentUser, updateProfile, changePassword, logout } = useAuth(); const navigate = useNavigate();
+  const [orders, setOrders] = useState([]); const [form, setForm] = useState({ fullName:currentUser.fullName, phone:currentUser.phone || "" }); const [password, setPassword] = useState({ current:"", next:"", confirm:"" }); const [message,setMessage]=useState(""); const [logoutOpen,setLogoutOpen]=useState(false);
+  useEffect(() => { let saved=[]; try { saved=JSON.parse(localStorage.getItem("ecommerce_orders")) || []; } catch { saved=[]; } const all=[...seedOrders,...saved.filter((item)=>!seedOrders.some((seed)=>seed.id===item.id))]; setOrders(all.filter((order)=>order.userId===currentUser.id)); },[currentUser.id]);
+  const change = (event) => setForm((item) => ({...item,[event.target.name]:event.target.value}));
+  const save = (event) => { event.preventDefault(); updateProfile(form); setMessage("Profile updated successfully."); };
+  const passwordSave = (event) => { event.preventDefault(); if(password.next!==password.confirm) return setMessage("New passwords do not match."); const result=changePassword(password.current,password.next); setMessage(result.message); if(result.success)setPassword({current:"",next:"",confirm:""}); };
+  return <main className="container page-section"><h1>My Account</h1>{message&&<Alert type={message.includes("success")?"success":"error"}>{message}</Alert>}<div className="checkout-layout"><section><form className="form-card" onSubmit={save}><h2>Profile Information</h2><label>Full Name<input name="fullName" value={form.fullName} onChange={change}/></label><label>Email<input value={currentUser.email} disabled/></label><label>Phone<input name="phone" value={form.phone} onChange={change}/></label><button className="btn btn--primary">Save Profile</button></form><form className="form-card" onSubmit={passwordSave}><h2>Change Password</h2><label>Current Password<input type="password" value={password.current} onChange={(e)=>setPassword((v)=>({...v,current:e.target.value}))}/></label><label>New Password<input type="password" value={password.next} onChange={(e)=>setPassword((v)=>({...v,next:e.target.value}))}/></label><label>Confirm New Password<input type="password" value={password.confirm} onChange={(e)=>setPassword((v)=>({...v,confirm:e.target.value}))}/></label><button className="btn btn--secondary">Update Password</button></form><button className="btn btn--danger" onClick={()=>setLogoutOpen(true)}>Logout</button></section><section><h2>My Orders</h2>{orders.length?orders.map((order)=><article className="order-card" key={order.id}><h3>{order.id}</h3><p><strong>Status:</strong> {order.status}</p><p>{new Date(order.createdAt || order.date).toLocaleDateString()}</p>{order.items.map((item)=><p key={item.productId}>{item.name || `Product ${item.productId}`} × {item.quantity}</p>)}<strong>${Number(order.total).toFixed(2)}</strong></article>):<p>You have no orders yet.</p>}</section></div><ConfirmDialog isOpen={logoutOpen} onClose={()=>setLogoutOpen(false)} onConfirm={()=>{logout();navigate("/");}} title="Log out?" message="Are you sure you want to log out?" confirmText="Log out"/></main>;
+}
+export default ProfilePage;

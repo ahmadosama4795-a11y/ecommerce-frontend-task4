@@ -1,0 +1,19 @@
+import { Outlet } from "react-router";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+
+function MainLayout() {
+    return (
+        <div className="app-shell">
+            <Navbar />
+
+            <main className="main-content">
+                <Outlet />
+            </main>
+
+            <Footer />
+        </div>
+    );
+}
+
+export default MainLayout;
